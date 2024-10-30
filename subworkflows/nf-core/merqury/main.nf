@@ -2,10 +2,10 @@
 //               https://github.com/nf-core/modules/tree/master/subworkflows
 //               You can also ask for help via your pull request or on the #subworkflows channel on the nf-core Slack workspace:
 //               https://nf-co.re/join
-// TODO nf-core: A subworkflow SHOULD import at least two modules
 
-include { SAMTOOLS_SORT      } from '../../../modules/nf-core/samtools/sort/main'
-include { SAMTOOLS_INDEX     } from '../../../modules/nf-core/samtools/index/main'
+include { MERYL_COUNT     } from '../../../modules/nf-core/meryl/count/main'
+include { MERYL_UNIONSUM  } from '../../../modules/nf-core/meryl/unionsum/main'
+include { MERQURY_MERQURY } from '../../../modules/nf-core/merqury/merqury/main'
 
 workflow MERQURY {
 
