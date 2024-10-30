@@ -10,27 +10,58 @@ include { MERQURY_MERQURY } from '../../../modules/nf-core/merqury/merqury/main'
 workflow MERQURY {
 
     take:
-    // TODO nf-core: edit input (take) channels
-    ch_bam // channel: [ val(meta), [ bam ] ]
+    fastq  // channel: [ val(meta), [ fastq ] ]
+    kvalue // integer: >0
 
     main:
 
     ch_versions = Channel.empty()
 
-    // TODO nf-core: substitute modules here for the modules of your subworkflow
+    // Make sure FASTQ items are not empty, and named appropriately.
+    // It's possible that the genomeqc workflow could pass tuples some of which have empty fastqs.
+    fastq
+        | map{meta, fq -> fq ? [meta, file(fq)] : [meta, fq]}
+        | filter { meta, fq -> fq && fq.name =~ /(\.fastq|\.fq|\.fastq\.gz|\.fq\.gz)$/ }
+        | set {fastq}
 
-    SAMTOOLS_SORT ( ch_bam )
-    ch_versions = ch_versions.mix(SAMTOOLS_SORT.out.versions.first())
+    // MODULE: MERYL_COUNT
+    MERYL_COUNT(
+        fastq,
+        kvalue
+    )
+    ch_meryl_db = MERYL_COUNT.out.meryl_db
+    ch_versions = ch_versions.mix(MERYL_COUNT.out.versions.first())
 
-    SAMTOOLS_INDEX ( SAMTOOLS_SORT.out.bam )
-    ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions.first())
+    // MODULE: MERYL_UNIONSUM
+    MERYL_UNIONSUM(
+        ch_meryl_db,
+        kvalue
+    )
+    ch_meryl_union = MERYL_UNIONSUM.out.meryl_db
+    ch_versions = ch_versions.mix(MERYL_UNIONSUM.out.versions.first())
+
+    // MODULE: MERQURY_MERQURY
+    ch_meryl_union
+        | join(fastq)
+        | set {ch_merqury_inputs}
+    MERQURY_MERQURY ( ch_merqury_inputs )
+    ch_merqury_qv                           = MERQURY_MERQURY.out.assembly_qv
+    ch_merqury_stats                        = MERQURY_MERQURY.out.stats
+    ch_merqury_spectra_cn_fl_png            = MERQURY_MERQURY.out.spectra_cn_fl_png
+    ch_merqury_spectra_asm_fl_png           = MERQURY_MERQURY.out.spectra_asm_fl_png
+    ch_hapmers_blob_png                     = MERQURY_MERQURY.out.hapmers_blob_png
+    ch_merqury_outputs                      = ch_merqury_qv
+                                            | mix(ch_merqury_stats)
+                                            | mix(ch_merqury_spectra_cn_fl_png)
+                                            | mix(ch_merqury_spectra_asm_fl_png)
+                                            | mix(ch_hapmers_blob_png)
+                                            | flatMap { meta, data -> data }
+    ch_versions                             = ch_versions.mix(MERQURY_MERQURY.out.versions.first())
+
 
     emit:
     // TODO nf-core: edit emitted channels
-    bam      = SAMTOOLS_SORT.out.bam           // channel: [ val(meta), [ bam ] ]
-    bai      = SAMTOOLS_INDEX.out.bai          // channel: [ val(meta), [ bai ] ]
-    csi      = SAMTOOLS_INDEX.out.csi          // channel: [ val(meta), [ csi ] ]
-
-    versions = ch_versions                     // channel: [ versions.yml ]
+    merqury  = ch_merqury_outputs  // channel: TODO [ val(meta), [ bam ] ]
+    versions = ch_versions         // channel: [ versions.yml ]
 }
 
