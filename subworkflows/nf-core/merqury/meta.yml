@@ -11,12 +11,13 @@ components:
   - merqury/merqury
 ## TODO nf-core: List all of the channels used as input with a description and their structure
 input:
-  - ch_bam:
+  - fastq:
       type: file
       description: |
-        The input channel containing the BAM/CRAM/SAM files
-        Structure: [ val(meta), path(bam) ]
-      pattern: "*.{bam/cram/sam}"
+        The input channel containing the fastq files
+        Structure: [ val(meta), path(fastq) ]
+      pattern: "*.{fastq/fastq.gz/fq/fq.gz}"
+## TODO: fastq, kvalue
 ## TODO nf-core: List all of the channels used as output with a descriptions and their structure
 output:
   - bam:

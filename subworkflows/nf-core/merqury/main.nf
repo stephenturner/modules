@@ -11,6 +11,8 @@ workflow MERQURY {
     take:
     fastq  // channel: [ val(meta), [ fastq ] ]
     kvalue // integer: >0
+    // TODO: fasta see genomeqc#75
+    // fasta  // channel: [ val(meta), file(fasta) ]
 
     main:
 
@@ -41,7 +43,7 @@ workflow MERQURY {
 
     // MODULE: MERQURY_MERQURY
     ch_meryl_union
-        | join(fastq)
+        | join(fasta) //TODO: fix this channel
         | set {ch_merqury_inputs}
     MERQURY_MERQURY ( ch_merqury_inputs )
     ch_merqury_qv                           = MERQURY_MERQURY.out.assembly_qv
